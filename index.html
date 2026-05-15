@@ -32,7 +32,6 @@
             overflow-x: hidden;
         }
 
-        /* Grain overlay */
         body::before {
             content: '';
             position: fixed;
@@ -91,58 +90,62 @@
             font-size: 0.875rem;
             color: var(--text-muted);
             font-weight: 300;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
             letter-spacing: 0.01em;
         }
 
-        /* Upload zone */
-        .upload-zone {
-            position: relative;
-            border: 2px dashed rgba(255,255,255,0.15);
-            border-radius: var(--radius);
-            padding: 36px 20px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            background: rgba(255,255,255,0.02);
+        /* ── Two picker buttons side by side ── */
+        .picker-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-bottom: 16px;
+        }
+
+        .picker-btn {
+            position: relative;
+            border: 2px dashed rgba(255,255,255,0.18);
+            border-radius: var(--radius);
+            padding: 28px 12px 22px;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            background: rgba(255,255,255,0.02);
+            text-align: center;
             overflow: hidden;
         }
-        .upload-zone:hover, .upload-zone.dragging {
+        .picker-btn:hover {
             border-color: var(--btn);
             background: rgba(255,255,255,0.05);
-            transform: scale(1.01);
+            transform: translateY(-2px);
         }
-        .upload-zone input[type="file"] {
+        .picker-btn:active { transform: scale(0.97); }
+
+        /* invisible file input covers the entire button area */
+        .picker-btn input[type="file"] {
             position: absolute;
             inset: 0;
             opacity: 0;
-            cursor: pointer;
             width: 100%;
             height: 100%;
+            cursor: pointer;
         }
-        .upload-icon {
-            font-size: 2.8rem;
-            margin-bottom: 12px;
+
+        .picker-icon {
+            font-size: 2.2rem;
             display: block;
-            animation: float 3s ease-in-out infinite;
+            margin-bottom: 8px;
+            pointer-events: none;
         }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50%       { transform: translateY(-6px); }
-        }
-        .upload-label {
+        .picker-label {
             font-family: 'Unbounded', sans-serif;
-            font-size: 0.85rem;
+            font-size: 0.68rem;
             font-weight: 700;
             color: var(--text);
-            letter-spacing: 0.05em;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
             display: block;
-            margin-bottom: 4px;
-        }
-        .upload-sub {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            line-height: 1.4;
+            pointer-events: none;
         }
 
         /* Preview strip */
@@ -158,6 +161,7 @@
         }
         .preview-strip::-webkit-scrollbar { display: none; }
         .preview-strip.has-photos { min-height: 80px; }
+
         .preview-thumb {
             flex-shrink: 0;
             width: 72px;
@@ -211,13 +215,8 @@
         .send-btn.visible { display: flex; }
         .send-btn:hover   { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
         .send-btn:active  { transform: scale(0.97); }
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        /* Spinner */
         .spinner {
             width: 18px; height: 18px;
             border: 2px solid rgba(0,0,0,0.2);
@@ -229,23 +228,22 @@
         .spinner.visible { display: block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Status */
         .status {
             display: none;
             margin-top: 14px;
             padding: 14px 16px;
             border-radius: var(--radius);
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 500;
             line-height: 1.5;
             text-align: center;
+            word-break: break-word;
         }
         .status.visible  { display: block; }
         .status.sending  { background: rgba(255,255,255,0.05); color: var(--text-muted); }
-        .status.success  { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
-        .status.error    { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .status.success  { background: rgba(34,197,94,0.15);  color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+        .status.error    { background: rgba(239,68,68,0.15);   color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
 
-        /* SMS open button (shown after upload) */
         .sms-btn {
             display: none;
             width: 100%;
@@ -269,259 +267,239 @@
         }
         .sms-btn.visible { display: flex; }
         .sms-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.25); }
-
-        /* Loading skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 8px;
-        }
-        @keyframes shimmer { to { background-position: -200% 0; } }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div class="logo-wrap" id="logo-wrap">
-            <img id="event-logo" src="" alt="Logo">
+<div class="card">
+    <div class="logo-wrap" id="logo-wrap">
+        <img id="event-logo" src="" alt="Logo">
+    </div>
+    <h1 id="event-name"    class="event-name">Loading...</h1>
+    <p  id="event-tagline" class="event-tagline">Connecting to your event...</p>
+
+    <!--
+        WHY TWO INPUTS:
+        iOS Safari ignores the absence of `capture` and still defaults to camera
+        when accept="image/*" is set alone. The only reliable way to split the
+        two actions is two separate <input> elements:
+          Left  → capture="environment"  always opens the camera
+          Right → no capture attr        always opens the photo library / Files
+        Android shows a chooser sheet for both anyway, so this is additive.
+    -->
+    <div class="picker-row">
+        <div class="picker-btn">
+            <input type="file" id="camera-input"  accept="image/*" capture="environment" multiple>
+            <span class="picker-icon">📷</span>
+            <span class="picker-label">Take a Photo</span>
         </div>
-        <h1 id="event-name" class="event-name">Loading...</h1>
-        <p  id="event-tagline" class="event-tagline">Connecting to your event...</p>
-
-        <div class="upload-zone" id="upload-zone">
-            <input type="file" id="photo-input" accept="image/*" multiple>
-            <span class="upload-icon">📸</span>
-            <span class="upload-label">Take / Select Photos</span>
-            <span class="upload-sub">Tap to open camera or choose from library</span>
+        <div class="picker-btn">
+            <input type="file" id="library-input" accept="image/*" multiple>
+            <span class="picker-icon">🖼️</span>
+            <span class="picker-label">Choose from Library</span>
         </div>
-
-        <div class="preview-strip" id="preview-strip"></div>
-
-        <button class="send-btn" id="send-btn">
-            <span id="btn-label">Send Photos</span>
-            <div class="spinner" id="spinner"></div>
-        </button>
-
-        <a class="sms-btn" id="sms-btn" href="#">
-            💬 Open in Messages
-        </a>
-
-        <div class="status" id="status"></div>
     </div>
 
+    <div class="preview-strip" id="preview-strip"></div>
+
+    <button class="send-btn" id="send-btn">
+        <span id="btn-label">Send Photos</span>
+        <div class="spinner" id="spinner"></div>
+    </button>
+
+    <a class="sms-btn" id="sms-btn" href="#">💬 Open in Messages</a>
+
+    <div class="status" id="status"></div>
+</div>
+
 <script>
-    // ─── CONFIG ──────────────────────────────────────────────────────────────
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYDOvaLlXwyYif54_NenHinFz3sAoxUPWGTemFDRQ0Lzh9PUU-9_QfrnXPTxLL_3qKvQ/exec';
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYDOvaLlXwyYif54_NenHinFz3sAoxUPWGTemFDRQ0Lzh9PUU-9_QfrnXPTxLL_3qKvQ/exec';
 
-    // ─── STATE ───────────────────────────────────────────────────────────────
-    const urlParams  = new URLSearchParams(window.location.search);
-    const eventKey   = urlParams.get('event') || 'Default';
-    let   selectedFiles  = [];
-    let   myPhoneNumber  = '';   // filled from spreadsheet col H
-    let   uploadedCount  = 0;
-    let   totalToUpload  = 0;
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const urlParams     = new URLSearchParams(window.location.search);
+const eventKey      = urlParams.get('event') || 'Default';
+let   selectedFiles = [];
+let   myPhone       = '';
+let   uploadedCount = 0;
+let   totalToUpload = 0;
+const sessionId     = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-    // Unique session ID per page load (timestamp + random)
-    const sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function getTextColor(hex) {
+    hex = hex.replace('#','');
+    const r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16);
+    return ((r*299+g*587+b*114)/1000) > 128 ? '#1a1a1a' : '#ffffff';
+}
+function getLightTint(hex) {
+    hex = hex.replace('#','');
+    const r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16);
+    return `rgb(${Math.round(r+(255-r)*.85)},${Math.round(g+(255-g)*.85)},${Math.round(b+(255-b)*.85)})`;
+}
+function setStatus(msg, type) {
+    const s = document.getElementById('status');
+    s.textContent = msg; s.className = 'status visible ' + type;
+}
+function clearStatus() {
+    const s = document.getElementById('status');
+    s.className = 'status'; s.textContent = '';
+}
 
-    // ─── HELPERS ─────────────────────────────────────────────────────────────
-    function getTextColor(hex) {
-        hex = hex.replace('#', '');
-        const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
-        return ((r*299 + g*587 + b*114)/1000) > 128 ? '#1a1a1a' : '#ffffff';
-    }
-    function getLightTint(hex) {
-        hex = hex.replace('#', '');
-        const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
-        return `rgb(${Math.round(r+(255-r)*0.85)},${Math.round(g+(255-g)*0.85)},${Math.round(b+(255-b)*0.85)})`;
-    }
-    function setStatus(msg, type) {
-        const s = document.getElementById('status');
-        s.textContent = msg;
-        s.className   = 'status visible ' + type;
-    }
-    function clearStatus() {
-        const s = document.getElementById('status');
-        s.className   = 'status';
-        s.textContent = '';
-    }
+// ── THEME ─────────────────────────────────────────────────────────────────────
+fetch(SCRIPT_URL + '?event=' + encodeURIComponent(eventKey))
+    .then(r => r.json())
+    .then(theme => {
+        const bg  = theme.bgColor   || '#111111';
+        const btn = theme.btnColor  || bg;
+        const txt = theme.textColor || getTextColor(bg);
 
-    // ─── APPLY THEME ─────────────────────────────────────────────────────────
-    fetch(SCRIPT_URL + '?event=' + encodeURIComponent(eventKey))
-        .then(r => r.json())
-        .then(theme => {
-            const bg   = theme.bgColor   || '#111111';
-            const btn  = theme.btnColor  || bg;
-            const txt  = theme.textColor || getTextColor(bg);
+        document.body.style.backgroundColor = bg;
+        document.querySelector('.card').style.backgroundColor = getLightTint(bg);
+        document.getElementById('event-name').style.color    = txt;
+        document.getElementById('event-tagline').style.color = txt;
+        document.documentElement.style.setProperty('--btn',      btn);
+        document.documentElement.style.setProperty('--btn-text', getTextColor(btn));
+        document.documentElement.style.setProperty('--text',     txt);
 
-            document.body.style.backgroundColor                              = bg;
-            document.querySelector('.card').style.backgroundColor            = getLightTint(bg);
-            document.getElementById('event-name').style.color               = txt;
-            document.getElementById('event-tagline').style.color            = txt;
-            document.querySelector('.upload-zone').style.borderColor        = 'rgba(0,0,0,0.12)';
+        document.getElementById('event-name').textContent    = theme.name    || 'Photo Upload';
+        document.getElementById('event-tagline').textContent = theme.tagline || 'Select photos to send';
+        document.title = theme.name || 'Photo Portal';
 
-            document.documentElement.style.setProperty('--btn', btn);
-            document.documentElement.style.setProperty('--btn-text', getTextColor(btn));
-            document.documentElement.style.setProperty('--text', txt);
-
-            document.getElementById('event-name').textContent    = theme.name    || 'Photo Upload';
-            document.getElementById('event-tagline').textContent = theme.tagline || 'Select your photos to send';
-            document.title = theme.name || 'Photo Portal';
-
-            if (theme.logo) {
-                document.getElementById('event-logo').src = theme.logo;
-                document.getElementById('logo-wrap').classList.add('visible');
-            }
-
-            // Phone number from col H (added in Apps Script)
-            if (theme.phone) myPhoneNumber = theme.phone.toString().replace(/\D/g,'');
-        })
-        .catch(() => {
-            document.getElementById('event-name').textContent    = 'Photo Upload';
-            document.getElementById('event-tagline').textContent = 'Select your photos to send';
-        });
-
-    // ─── FILE SELECTION ───────────────────────────────────────────────────────
-    document.getElementById('photo-input').addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
-
-        // Merge with existing selection (dedupe by name+size)
-        files.forEach(f => {
-            const exists = selectedFiles.some(x => x.name === f.name && x.size === f.size);
-            if (!exists) selectedFiles.push(f);
-        });
-
-        renderPreviews();
-        clearStatus();
-
-        const sendBtn = document.getElementById('send-btn');
-        sendBtn.classList.add('visible');
-        document.getElementById('btn-label').textContent = `Send ${selectedFiles.length} Photo${selectedFiles.length > 1 ? 's' : ''}`;
-
-        // hide sms btn if re-selecting
-        document.getElementById('sms-btn').classList.remove('visible');
+        if (theme.logo) {
+            document.getElementById('event-logo').src = theme.logo;
+            document.getElementById('logo-wrap').classList.add('visible');
+        }
+        if (theme.phone) myPhone = theme.phone.toString().replace(/\D/g,'');
+    })
+    .catch(err => {
+        console.warn('Theme load failed:', err);
+        document.getElementById('event-name').textContent    = 'Photo Upload';
+        document.getElementById('event-tagline').textContent = 'Select photos to send';
     });
 
-    // drag-over visual
-    const zone = document.getElementById('upload-zone');
-    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragging'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
-    zone.addEventListener('drop',      e => {
-        e.preventDefault();
-        zone.classList.remove('dragging');
-        document.getElementById('photo-input').files = e.dataTransfer.files;
-        document.getElementById('photo-input').dispatchEvent(new Event('change'));
+// ── FILE SELECTION ────────────────────────────────────────────────────────────
+function handleFiles(fileList) {
+    const files = Array.from(fileList);
+    if (!files.length) return;
+    files.forEach(f => {
+        if (!selectedFiles.some(x => x.name === f.name && x.size === f.size))
+            selectedFiles.push(f);
+    });
+    renderPreviews();
+    clearStatus();
+    document.getElementById('sms-btn').classList.remove('visible');
+    document.getElementById('send-btn').classList.add('visible');
+    document.getElementById('btn-label').textContent =
+        `Send ${selectedFiles.length} Photo${selectedFiles.length !== 1 ? 's' : ''}`;
+}
+
+document.getElementById('camera-input').addEventListener('change',  e => handleFiles(e.target.files));
+document.getElementById('library-input').addEventListener('change', e => handleFiles(e.target.files));
+
+function renderPreviews() {
+    const strip = document.getElementById('preview-strip');
+    strip.innerHTML = '';
+    strip.classList.add('has-photos');
+    const MAX = 5;
+    selectedFiles.slice(0, MAX).forEach(file => {
+        const url   = URL.createObjectURL(file);
+        const thumb = document.createElement('img');
+        thumb.className = 'preview-thumb';
+        thumb.src       = url;
+        thumb.onload    = () => URL.revokeObjectURL(url);
+        strip.appendChild(thumb);
+    });
+    if (selectedFiles.length > MAX) {
+        const extra = document.createElement('div');
+        extra.className   = 'preview-count';
+        extra.textContent = `+${selectedFiles.length - MAX}`;
+        strip.appendChild(extra);
+    }
+}
+
+// ── UPLOAD ────────────────────────────────────────────────────────────────────
+document.getElementById('send-btn').addEventListener('click', async function () {
+    if (!selectedFiles.length) return;
+
+    const sendBtn = this;
+    const spinner = document.getElementById('spinner');
+    const btnLbl  = document.getElementById('btn-label');
+
+    sendBtn.disabled = true;
+    spinner.classList.add('visible');
+    btnLbl.textContent = 'Uploading...';
+    setStatus(`Uploading ${selectedFiles.length} photo${selectedFiles.length !== 1 ? 's' : ''}…`, 'sending');
+
+    uploadedCount = 0;
+    totalToUpload = selectedFiles.length;
+
+    const uploadOne = (file) => new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onerror = () => resolve({ ok: false, reason: 'FileReader error' });
+        reader.onload  = () => {
+            const payload = JSON.stringify({
+                eventName: eventKey,
+                sessionId: sessionId,
+                fileName:  file.name,
+                base64:    reader.result
+            });
+
+            // Google Apps Script cross-origin POST requires no-cors mode.
+            // The response will be opaque (status 0) — that is expected.
+            // fetch() only rejects on a true network failure, so a resolved
+            // promise here means the data reached GAS successfully.
+            fetch(SCRIPT_URL, {
+                method:  'POST',
+                mode:    'no-cors',
+                headers: { 'Content-Type': 'text/plain' }, // avoids CORS preflight
+                body:    payload
+            })
+            .then(() => {
+                uploadedCount++;
+                setStatus(`Uploaded ${uploadedCount} of ${totalToUpload}…`, 'sending');
+                resolve({ ok: true });
+            })
+            .catch(err => {
+                console.error('Fetch failed for', file.name, err);
+                resolve({ ok: false, reason: err.message });
+            });
+        };
+        reader.readAsDataURL(file);
     });
 
-    function renderPreviews() {
-        const strip = document.getElementById('preview-strip');
-        strip.innerHTML = '';
-        strip.classList.add('has-photos');
-        const MAX_SHOW = 5;
-        const show = selectedFiles.slice(0, MAX_SHOW);
-        show.forEach(file => {
-            const url   = URL.createObjectURL(file);
-            const thumb = document.createElement('img');
-            thumb.className = 'preview-thumb';
-            thumb.src = url;
-            thumb.onload = () => URL.revokeObjectURL(url);
-            strip.appendChild(thumb);
-        });
-        if (selectedFiles.length > MAX_SHOW) {
-            const extra = document.createElement('div');
-            extra.className = 'preview-count';
-            extra.textContent = `+${selectedFiles.length - MAX_SHOW}`;
-            strip.appendChild(extra);
-        }
+    // Upload 2 at a time — GAS execution slots are limited
+    const results = [];
+    for (let i = 0; i < selectedFiles.length; i += 2) {
+        const batch = selectedFiles.slice(i, i + 2).map(uploadOne);
+        results.push(...await Promise.all(batch));
     }
 
-    // ─── UPLOAD + SMS ─────────────────────────────────────────────────────────
-    document.getElementById('send-btn').addEventListener('click', async function() {
-        if (!selectedFiles.length) return;
+    const failed = results.filter(r => !r.ok).length;
+    sendBtn.disabled = false;
+    spinner.classList.remove('visible');
 
-        const sendBtn = this;
-        const spinner = document.getElementById('spinner');
-        const btnLbl  = document.getElementById('btn-label');
-
-        sendBtn.disabled = true;
-        spinner.classList.add('visible');
-        btnLbl.textContent = 'Uploading...';
-        setStatus(`Uploading ${selectedFiles.length} photo${selectedFiles.length > 1 ? 's' : ''}…`, 'sending');
-
-        uploadedCount = 0;
-        totalToUpload = selectedFiles.length;
-
-        const uploadFile = (file) => new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                // GAS doesn't send CORS headers on POST responses, so use
-                // no-cors — the response is opaque but the upload still lands.
-                fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode:   'no-cors',
-                    body: JSON.stringify({
-                        eventName: eventKey,
-                        sessionId: sessionId,
-                        fileName:  file.name,
-                        base64:    reader.result
-                    })
-                })
-                .then(() => {
-                    uploadedCount++;
-                    const pct = Math.round((uploadedCount / totalToUpload) * 100);
-                    btnLbl.textContent = `Uploading… ${pct}%`;
-                    setStatus(`Uploaded ${uploadedCount} of ${totalToUpload}…`, 'sending');
-                    resolve({ ok: true });
-                })
-                .catch(() => { uploadedCount++; resolve({ ok: false }); });
-            };
-        });
-
-        // Upload all concurrently (cap at 3 parallel)
-        const results = await uploadInBatches(selectedFiles, 3, uploadFile);
-        const failed  = results.filter(r => !r.ok).length;
-
-        sendBtn.disabled = false;
-        spinner.classList.remove('visible');
-
-        if (failed === 0) {
-            btnLbl.textContent = '✓ Sent!';
-            setStatus(`✅ ${totalToUpload} photo${totalToUpload > 1 ? 's' : ''} uploaded successfully!`, 'success');
-            showSmsButton();
-        } else if (failed < totalToUpload) {
-            btnLbl.textContent = 'Partial';
-            setStatus(`⚠️ ${totalToUpload - failed} sent, ${failed} failed. Tap again to retry.`, 'error');
-            selectedFiles = []; // reset so only retries happen on re-select
-        } else {
-            btnLbl.textContent = 'Retry';
-            sendBtn.disabled   = false;
-            setStatus('❌ Upload failed. Check connection and try again.', 'error');
-        }
-    });
-
-    async function uploadInBatches(files, batchSize, uploadFn) {
-        const results = [];
-        for (let i = 0; i < files.length; i += batchSize) {
-            const batch = files.slice(i, i + batchSize);
-            const batchResults = await Promise.all(batch.map(uploadFn));
-            results.push(...batchResults);
-        }
-        return results;
+    if (failed === 0) {
+        btnLbl.textContent = '✓ Sent!';
+        setStatus(`✅ ${totalToUpload} photo${totalToUpload !== 1 ? 's' : ''} uploaded! Check your Drive.`, 'success');
+        showSmsButton();
+        selectedFiles = [];
+    } else {
+        const reasons = [...new Set(results.filter(r => !r.ok).map(r => r.reason))].join(', ');
+        console.error('Upload failures:', reasons);
+        btnLbl.textContent = 'Retry';
+        setStatus(`❌ ${failed} upload${failed !== 1 ? 's' : ''} failed — ${reasons}. Check connection and retry.`, 'error');
     }
+});
 
-    function showSmsButton() {
-        const count = totalToUpload;
-        const body  = `📸 New ${count} photo${count > 1 ? 's' : ''} uploaded for event: ${eventKey} (session: ${sessionId}). Check your Drive folder!`;
-        const href  = myPhoneNumber
-            ? `sms:${myPhoneNumber}&body=${encodeURIComponent(body)}`
-            : `sms:&body=${encodeURIComponent(body)}`;
-
-        const smsBtn = document.getElementById('sms-btn');
-        smsBtn.href  = href;
-        smsBtn.classList.add('visible');
-    }
+// ── SMS NOTIFICATION ──────────────────────────────────────────────────────────
+function showSmsButton() {
+    const body = `📸 ${totalToUpload} photo${totalToUpload !== 1 ? 's' : ''} uploaded — event: ${eventKey} | session: ${sessionId}`;
+    const href = myPhone
+        ? `sms:${myPhone}&body=${encodeURIComponent(body)}`
+        : `sms:&body=${encodeURIComponent(body)}`;
+    const btn  = document.getElementById('sms-btn');
+    btn.href   = href;
+    btn.classList.add('visible');
+}
 </script>
 </body>
 </html>
