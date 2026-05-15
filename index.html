@@ -378,7 +378,13 @@ fetch(SCRIPT_URL + '?event=' + encodeURIComponent(eventKey))
             document.getElementById('event-logo').src = theme.logo;
             document.getElementById('logo-wrap').classList.add('visible');
         }
-        if (theme.phone) myPhone = theme.phone.toString().replace(/\D/g,'');
+        const rawPhone = String(theme.myPhone || '').trim();
+
+myPhone = rawPhone.replace(/[^\d]/g, '');
+
+if (myPhone.length === 10) {
+  myPhone = '1' + myPhone;
+}
     })
     .catch(err => {
         console.warn('Theme load failed:', err);
@@ -523,7 +529,7 @@ function showSmsButton() {
   // Construct the cross-platform href structure
   let href = '';
   if (myPhone) {
-    href = `sms:+1${myPhone}${separator}body=${encodedBody}`;
+    href = `sms:+${myPhone}${separator}body=${encodedBody}`;
   } else {
     // If no number is passed, iOS and Android handle '?body=' safely
     href = `sms:?body=${encodedBody}`;
