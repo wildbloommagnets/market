@@ -289,7 +289,7 @@
         <p  id="event-tagline" class="event-tagline">Connecting to your event...</p>
 
         <div class="upload-zone" id="upload-zone">
-            <input type="file" id="photo-input" accept="image/*" multiple capture="environment">
+            <input type="file" id="photo-input" accept="image/*" multiple>
             <span class="upload-icon">📸</span>
             <span class="upload-label">Take / Select Photos</span>
             <span class="upload-sub">Tap to open camera or choose from library</span>
@@ -311,7 +311,7 @@
 
 <script>
     // ─── CONFIG ──────────────────────────────────────────────────────────────
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYDOvaLlXwyYif54_NenHinFz3sAoxUPWGTemFDRQ0Lzh9PUU-9_QfrnXPTxLL_3qKvQ/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0afQqBNMTpSCswiw0wfFGfXwlio6skgW95BMWzBPf_ZTji4PZUGwwshcI_CwOHvOC/exec';
 
     // ─── STATE ───────────────────────────────────────────────────────────────
     const urlParams  = new URLSearchParams(window.location.search);
@@ -456,8 +456,11 @@
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = () => {
+                // GAS doesn't send CORS headers on POST responses, so use
+                // no-cors — the response is opaque but the upload still lands.
                 fetch(SCRIPT_URL, {
                     method: 'POST',
+                    mode:   'no-cors',
                     body: JSON.stringify({
                         eventName: eventKey,
                         sessionId: sessionId,
@@ -465,13 +468,12 @@
                         base64:    reader.result
                     })
                 })
-                .then(r => r.text())
-                .then(text => {
+                .then(() => {
                     uploadedCount++;
                     const pct = Math.round((uploadedCount / totalToUpload) * 100);
                     btnLbl.textContent = `Uploading… ${pct}%`;
                     setStatus(`Uploaded ${uploadedCount} of ${totalToUpload}…`, 'sending');
-                    resolve({ ok: true, text });
+                    resolve({ ok: true });
                 })
                 .catch(() => { uploadedCount++; resolve({ ok: false }); });
             };
