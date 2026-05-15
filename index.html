@@ -355,43 +355,98 @@ function clearStatus() {
 }
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
-fetch(SCRIPT_URL + '?event=' + encodeURIComponent(eventKey))
-    .then(r => r.json())
-    .then(theme => {
-        const bg  = theme.bgColor   || '#111111';
-        const btn = theme.btnColor  || bg;
+// ── THEME ─────────────────────────────────────────────────────────────────────
+async function loadTheme() {
+    try {
+        const response = await fetch(
+            SCRIPT_URL + '?event=' + encodeURIComponent(eventKey)
+        );
+
+        // Get raw response first for debugging
+        const rawText = await response.text();
+
+        console.log('RAW RESPONSE:', rawText);
+
+        // Parse JSON safely
+        let theme;
+        try {
+            theme = JSON.parse(rawText);
+        } catch (jsonErr) {
+            console.error('JSON PARSE FAILED:', jsonErr);
+            throw new Error('Invalid JSON returned from Apps Script');
+        }
+
+        console.log('PARSED THEME:', theme);
+
+        // Validate object
+        if (!theme || typeof theme !== 'object') {
+            throw new Error('Theme object missing');
+        }
+
+        // ── COLORS ─────────────────────────────────────
+        const bg  = theme.bgColor  || '#111111';
+        const btn = theme.btnColor || '#f5c518';
         const txt = theme.textColor || getTextColor(bg);
 
         document.body.style.backgroundColor = bg;
-        document.querySelector('.card').style.backgroundColor = getLightTint(bg);
-        document.getElementById('event-name').style.color    = txt;
-        document.getElementById('event-tagline').style.color = txt;
-        document.documentElement.style.setProperty('--btn',      btn);
-        document.documentElement.style.setProperty('--btn-text', getTextColor(btn));
-        document.documentElement.style.setProperty('--text',     txt);
 
-        document.getElementById('event-name').textContent    = theme.name    || 'Photo Upload';
-        document.getElementById('event-tagline').textContent = theme.tagline || 'Select photos to send';
+        document.querySelector('.card').style.backgroundColor =
+            getLightTint(bg);
+
+        document.documentElement.style.setProperty('--btn', btn);
+        document.documentElement.style.setProperty(
+            '--btn-text',
+            getTextColor(btn)
+        );
+
+        document.documentElement.style.setProperty('--text', txt);
+
+        // ── TEXT ───────────────────────────────────────
+        document.getElementById('event-name').textContent =
+            theme.name || 'Photo Upload';
+
+        document.getElementById('event-tagline').textContent =
+            theme.tagline || 'Select photos to send';
+
+        document.getElementById('event-name').style.color = txt;
+        document.getElementById('event-tagline').style.color = txt;
+
         document.title = theme.name || 'Photo Portal';
 
+        // ── LOGO ───────────────────────────────────────
         if (theme.logo) {
             document.getElementById('event-logo').src = theme.logo;
             document.getElementById('logo-wrap').classList.add('visible');
         }
+
+        // ── PHONE ──────────────────────────────────────
         const rawPhone = String(theme.myPhone || '').trim();
 
-myPhone = rawPhone.replace(/[^\d]/g, '');
+        myPhone = rawPhone.replace(/[^\d]/g, '');
 
-if (myPhone.length === 10) {
-  myPhone = '1' + myPhone;
+        if (myPhone.length === 10) {
+            myPhone = '1' + myPhone;
+        }
+
+        console.log('FINAL PHONE:', myPhone);
+
+    } catch (err) {
+        console.error('THEME LOAD FAILED:', err);
+
+        document.getElementById('event-name').textContent =
+            'Photo Upload';
+
+        document.getElementById('event-tagline').textContent =
+            'Could not load event settings';
+
+        setStatus(
+            '⚠️ Could not load event configuration.',
+            'error'
+        );
+    }
 }
-    })
-    .catch(err => {
-        console.warn('Theme load failed:', err);
-        document.getElementById('event-name').textContent    = 'Photo Upload';
-        document.getElementById('event-tagline').textContent = 'Select photos to send';
-    });
 
+loadTheme();
 // ── FILE SELECTION ────────────────────────────────────────────────────────────
 function handleFiles(fileList) {
     const files = Array.from(fileList);
