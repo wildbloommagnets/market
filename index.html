@@ -509,16 +509,31 @@ document.getElementById('send-btn').addEventListener('click', async function () 
 
 // ── SMS NOTIFICATION ──────────────────────────────────────────────────────────
 function showSmsButton() {
-    const lastName = document.getElementById('last-name').value.trim() || 'Guest';
-    const body = `📸 ${totalToUpload} new photo${totalToUpload !== 1 ? 's' : ''} uploaded — Event: ${eventKey} | Guest: ${lastName}`;
-    // iOS requires ?body= (not &body=) when a number is present
-    const href = myPhone
-        ? `sms:+1${myPhone}?body=${encodeURIComponent(body)}`
-        : `sms:?body=${encodeURIComponent(body)}`;
-    const btn  = document.getElementById('sms-btn');
-    btn.href   = href;
-    btn.classList.add('visible');
+  const lastName = document.getElementById('last-name').value.trim() || 'Guest';
+  const body = `📸 ${totalToUpload} new photo${totalToUpload !== 1 ? 's' : ''} uploaded — Event: ${eventKey} | Guest: ${lastName}`;
+  
+  // Detect if the user is running an Apple iOS/iPadOS device
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  // Set the query delimiter based on platform logic
+  const separator = isIOS ? '&' : '?';
+  const encodedBody = encodeURIComponent(body);
+
+  // Construct the cross-platform href structure
+  let href = '';
+  if (myPhone) {
+    href = `sms:+1${myPhone}${separator}body=${encodedBody}`;
+  } else {
+    // If no number is passed, iOS and Android handle '?body=' safely
+    href = `sms:?body=${encodedBody}`;
+  }
+
+  const btn = document.getElementById('sms-btn');
+  btn.href = href;
+  btn.classList.add('visible');
 }
+
 </script>
 </body>
 </html>
