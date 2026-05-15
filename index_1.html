@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body id="body-bg" class="flex items-center justify-center min-h-screen p-4 transition-colors duration-500">
+    <div id="event-card" class="p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border border-gray-100">
+        <img id="event-logo" src="" alt="Logo" class="mx-auto mb-4 w-48 h-48 object-contain hidden">
+        <h1 id="event-name" class="text-2xl font-bold mb-1">Loading...</h1>
+        <p id="event-tagline" class="text-sm mb-6 italic opacity-70">Connecting to your event...</p>
+        <div class="space-y-4 text-left">
+            <input type="text" id="session-id" placeholder="Your Last Name"
+                class="w-full p-4 border-2 border-gray-100 rounded-xl focus:outline-none transition-all">
+            <label id="upload-btn" class="block w-full text-center py-5 rounded-2xl font-black cursor-pointer shadow-lg active:scale-95 transition-all">
+                <span>📸 TAKE / SELECT PHOTOS</span>
+                <input type="file" id="photo-input" accept="image/*" multiple class="hidden">
+            </label>
+            <div id="status" class="text-center text-sm font-bold hidden p-3 rounded-xl"></div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJJ_BCmf8eAv10A7ULK53CSF33T4e1h-t7PXXqF9_c1lSNMRcmBTnAsfatYVRGDRGA/exec';
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventKey = urlParams.get('event') || 'Default';
+
+        // ✅ Auto-fill name from local storage if previously entered
+        var savedName = localStorage.getItem('sessionId_' + eventKey);
+        if (savedName) {
+            document.getElementById('session-id').value = savedName;
+        }
+
+        // ✅ Save name to local storage whenever user types
+        document.getElementById('session-id').addEventListener('input', function() {
+            localStorage.setItem('sessionId_' + eventKey, this.value.trim());
+        });
+
+        function getTextColor(hex) {
+            hex = hex.replace('#', '');
+            var r = parseInt(hex.substring(0,2), 16);
+            var g = parseInt(hex.substring(2,4), 16);
+            var b = parseInt(hex.substring(4,6), 16);
+            var brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? '#1a1a1a' : '#ffffff';
+        }
+
+        function getLightTint(hex) {
+            hex = hex.replace('#', '');
+            var r = parseInt(hex.substring(0,2), 16);
+            var g = parseInt(hex.substring(2,4), 16);
+            var b = parseInt(hex.substring(4,6), 16);
+            r = Math.round(r + (255 - r) * 0.85);
+            g = Math.round(g + (255 - g) * 0.85);
+            b = Math.round(b + (255 - b) * 0.85);
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+
+        fetch(SCRIPT_URL + '?event=' + eventKey)
+            .then(function(res) { return res.json(); })
+            .then(function(theme) {
+                var bgColor   = theme.bgColor   || '#722F37';
+                var btnColor  = theme.btnColor  || '#ECEEBE';
+                var textColor = theme.textColor || '#A97B81';
+
+                // Body background = bgColor directly from spreadsheet
+                document.getElementById('body-bg').style.backgroundColor = bgColor;
+
+                // Card background = light tint of bgColor for subtle contrast
+                document.getElementById('event-card').style.backgroundColor = getLightTint(bgColor);
+
+                // Use textColor directly from spreadsheet — don't auto-calculate
+                document.getElementById('event-name').style.color = textColor;
+                document.getElementById('event-tagline').style.color = textColor;
+
+                // Button: use !important to beat any Tailwind classes
+                var btn = document.getElementById('upload-btn');
+                btn.style.setProperty('background-color', btnColor, 'important');
+                btn.style.setProperty('color', getTextColor(btnColor), 'important');
+
+                document.getElementById('event-name').innerText = theme.name;
+                document.title = theme.name;
+                document.getElementById('event-tagline').innerText = theme.tagline;
+
+                if (theme.logo) {
+                    var logo = document.getElementById('event-logo');
+                    logo.src = theme.logo;
+                    logo.classList.remove('hidden');
+                }
+            })
+            .catch(function(err) {
+                document.getElementById('event-name').innerText = 'Connection Error';
+                console.error(err);
+            });
+
+        document.getElementById('photo-input').addEventListener('change', function(e) {
+            var sessionId = document.getElementById('session-id').value.trim();
+            var status = document.getElementById('status');
+            var files = e.target.files;
+            if (!files.length) return;
+            if (!sessionId) {
+                status.className = "text-center text-sm font-bold p-3 rounded-xl bg-red-100 text-red-700 block";
+                status.innerText = '⚠️ Please enter your name or table number first.';
+                document.getElementById('photo-input').value = ''; // ✅ reset file input so change event fires again
+                return;
+            }
+
+            status.className = "text-center text-sm font-bold p-3 rounded-xl bg-blue-100 text-blue-700 block";
+            status.innerText = 'Sending ' + files.length + ' photo(s)...';
+
+            for (var i = 0; i < files.length; i++) {
+                (function(file) {
+                    var reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = function() {
+                        fetch(SCRIPT_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                eventName: eventKey,
+                                sessionId: sessionId,
+                                fileName: file.name,
+                                base64: reader.result
+                            })
+                        })
+                        .then(function() {
+                            status.innerText = '✅ PHOTOS SENT! Printing soon...';
+                            status.className = "text-center text-sm font-bold p-3 rounded-xl bg-green-100 text-green-700 block";
+                        })
+                        .catch(function() {
+                            status.innerText = '❌ ERROR. Try again.';
+                            status.className = "text-center text-sm font-bold p-3 rounded-xl bg-red-100 text-red-700 block";
+                        });
+                    };
+                })(files[i]);
+            }
+        });
+    </script>
+</body>
+</html>
