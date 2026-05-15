@@ -277,6 +277,16 @@
     <h1 id="event-name"    class="event-name">Loading...</h1>
     <p  id="event-tagline" class="event-tagline">Connecting to your event...</p>
 
+    <input
+        type="text"
+        id="last-name"
+        placeholder="Your Last Name"
+        autocomplete="family-name"
+        style="width:100%;margin-bottom:14px;padding:16px 18px;border-radius:var(--radius);border:2px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;outline:none;transition:border-color 0.2s ease;"
+        onfocus="this.style.borderColor='var(--btn)'"
+        onblur="this.style.borderColor='rgba(255,255,255,0.12)'"
+    >
+
     <!--
         WHY TWO INPUTS:
         iOS Safari ignores the absence of `capture` and still defaults to camera
@@ -420,6 +430,13 @@ function renderPreviews() {
 document.getElementById('send-btn').addEventListener('click', async function () {
     if (!selectedFiles.length) return;
 
+    const lastName = document.getElementById('last-name').value.trim();
+    if (!lastName) {
+        setStatus('⚠️ Please enter your last name first.', 'error');
+        document.getElementById('last-name').focus();
+        return;
+    }
+
     const sendBtn = this;
     const spinner = document.getElementById('spinner');
     const btnLbl  = document.getElementById('btn-label');
@@ -492,10 +509,12 @@ document.getElementById('send-btn').addEventListener('click', async function () 
 
 // ── SMS NOTIFICATION ──────────────────────────────────────────────────────────
 function showSmsButton() {
-    const body = `📸 ${totalToUpload} photo${totalToUpload !== 1 ? 's' : ''} uploaded — event: ${eventKey} | session: ${sessionId}`;
+    const lastName = document.getElementById('last-name').value.trim() || 'Guest';
+    const body = `📸 ${totalToUpload} new photo${totalToUpload !== 1 ? 's' : ''} uploaded — Event: ${eventKey} | Guest: ${lastName}`;
+    // iOS requires ?body= (not &body=) when a number is present
     const href = myPhone
-        ? `sms:${myPhone}&body=${encodeURIComponent(body)}`
-        : `sms:&body=${encodeURIComponent(body)}`;
+        ? `sms:+1${myPhone}?body=${encodeURIComponent(body)}`
+        : `sms:?body=${encodeURIComponent(body)}`;
     const btn  = document.getElementById('sms-btn');
     btn.href   = href;
     btn.classList.add('visible');
