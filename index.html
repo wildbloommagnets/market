@@ -67,7 +67,7 @@
             inset: 0;
 
             background-image:
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' [...]
 
             pointer-events: none;
 
@@ -451,12 +451,24 @@
             color: var(--subtext);
         }
 
+        /* Hide interactive elements during loading */
+        .card.loading .input,
+        .card.loading .picker-row,
+        .card.loading .send-btn {
+            display: none;
+        }
+
+        .card.loading .event-name,
+        .card.loading .event-tagline {
+            display: block;
+        }
+
     </style>
 </head>
 
 <body>
 
-<div class="card">
+<div class="card loading" id="card">
 
     <div class="logo-wrap" id="logo-wrap">
         <img id="event-logo" src="" alt="Event Logo">
@@ -649,6 +661,10 @@
 
             document.body.style.background = bg;
 
+            // Remove loading state to show interactive elements
+            document.getElementById('card')
+                .classList.remove('loading');
+
         } catch (err) {
 
             console.error(err);
@@ -657,6 +673,10 @@
                 'Could not load event.',
                 'error'
             );
+
+            // Still remove loading state on error
+            document.getElementById('card')
+                .classList.remove('loading');
         }
     }
 
