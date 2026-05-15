@@ -2,140 +2,524 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Photo Portal</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #111111;
+            --card: #1a1a1a;
+            --btn: #f5c518;
+            --btn-text: #111111;
+            --text: #ffffff;
+            --text-muted: rgba(255,255,255,0.5);
+            --radius: 20px;
+            --radius-lg: 32px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg);
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background-color 0.6s ease;
+            overflow-x: hidden;
+        }
+
+        /* Grain overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            padding: 40px 32px 36px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.07);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+            animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .logo-wrap {
+            margin: 0 auto 20px;
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .logo-wrap.visible { display: flex; }
+        .logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+
+        .event-name {
+            font-family: 'Unbounded', sans-serif;
+            font-size: clamp(1.3rem, 5vw, 1.7rem);
+            font-weight: 900;
+            color: var(--text);
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+
+        .event-tagline {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 300;
+            margin-bottom: 32px;
+            letter-spacing: 0.01em;
+        }
+
+        /* Upload zone */
+        .upload-zone {
+            position: relative;
+            border: 2px dashed rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 36px 20px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: rgba(255,255,255,0.02);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .upload-zone:hover, .upload-zone.dragging {
+            border-color: var(--btn);
+            background: rgba(255,255,255,0.05);
+            transform: scale(1.01);
+        }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .upload-icon {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-6px); }
+        }
+        .upload-label {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .upload-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Preview strip */
+        .preview-strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 4px 2px 8px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+            min-height: 0;
+            transition: min-height 0.3s ease;
+        }
+        .preview-strip::-webkit-scrollbar { display: none; }
+        .preview-strip.has-photos { min-height: 80px; }
+        .preview-thumb {
+            flex-shrink: 0;
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.1);
+            animation: thumbIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        @keyframes thumbIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        .preview-count {
+            flex-shrink: 0;
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 2px dashed rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'Unbounded', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Send button */
+        .send-btn {
+            width: 100%;
+            padding: 18px 24px;
+            border-radius: var(--radius);
+            border: none;
+            background: var(--btn);
+            color: var(--btn-text);
+            font-family: 'Unbounded', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 900;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .send-btn.visible { display: flex; }
+        .send-btn:hover   { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.4); }
+        .send-btn:active  { transform: scale(0.97); }
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top-color: var(--btn-text);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .spinner.visible { display: block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Status */
+        .status {
+            display: none;
+            margin-top: 14px;
+            padding: 14px 16px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1.5;
+            text-align: center;
+        }
+        .status.visible  { display: block; }
+        .status.sending  { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+        .status.success  { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+        .status.error    { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+
+        /* SMS open button (shown after upload) */
+        .sms-btn {
+            display: none;
+            width: 100%;
+            margin-top: 12px;
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 2px solid rgba(255,255,255,0.12);
+            background: transparent;
+            color: var(--text);
+            font-family: 'Unbounded', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .sms-btn.visible { display: flex; }
+        .sms-btn:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.25); }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer { to { background-position: -200% 0; } }
+    </style>
 </head>
-<body id="body-bg" class="flex items-center justify-center min-h-screen p-4 transition-colors duration-500">
-    <div id="event-card" class="p-8 rounded-3xl shadow-2xl w-full max-w-md text-center border border-gray-100">
-        <img id="event-logo" src="" alt="Logo" class="mx-auto mb-4 w-48 h-48 object-contain hidden">
-        <h1 id="event-name" class="text-2xl font-bold mb-1">Loading...</h1>
-        <p id="event-tagline" class="text-sm mb-6 italic opacity-70">Connecting to your event...</p>
-        <div class="space-y-4 text-left">
-            <input type="text" id="session-id" placeholder="Your Last Name"
-                class="w-full p-4 border-2 border-gray-100 rounded-xl focus:outline-none transition-all">
-            <label id="upload-btn" class="block w-full text-center py-5 rounded-2xl font-black cursor-pointer shadow-lg active:scale-95 transition-all">
-                <span>📸 TAKE / SELECT PHOTOS</span>
-                <input type="file" id="photo-input" accept="image/*" multiple class="hidden">
-            </label>
-            <div id="status" class="text-center text-sm font-bold hidden p-3 rounded-xl"></div>
+<body>
+    <div class="card">
+        <div class="logo-wrap" id="logo-wrap">
+            <img id="event-logo" src="" alt="Logo">
         </div>
+        <h1 id="event-name" class="event-name">Loading...</h1>
+        <p  id="event-tagline" class="event-tagline">Connecting to your event...</p>
+
+        <div class="upload-zone" id="upload-zone">
+            <input type="file" id="photo-input" accept="image/*" multiple capture="environment">
+            <span class="upload-icon">📸</span>
+            <span class="upload-label">Take / Select Photos</span>
+            <span class="upload-sub">Tap to open camera or choose from library</span>
+        </div>
+
+        <div class="preview-strip" id="preview-strip"></div>
+
+        <button class="send-btn" id="send-btn">
+            <span id="btn-label">Send Photos</span>
+            <div class="spinner" id="spinner"></div>
+        </button>
+
+        <a class="sms-btn" id="sms-btn" href="#">
+            💬 Open in Messages
+        </a>
+
+        <div class="status" id="status"></div>
     </div>
 
-    <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzJJ_BCmf8eAv10A7ULK53CSF33T4e1h-t7PXXqF9_c1lSNMRcmBTnAsfatYVRGDRGA/exec';
-        const urlParams = new URLSearchParams(window.location.search);
-        const eventKey = urlParams.get('event') || 'Default';
+<script>
+    // ─── CONFIG ──────────────────────────────────────────────────────────────
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0afQqBNMTpSCswiw0wfFGfXwlio6skgW95BMWzBPf_ZTji4PZUGwwshcI_CwOHvOC/exec';
 
-        // ✅ Auto-fill name from local storage if previously entered
-        var savedName = localStorage.getItem('sessionId_' + eventKey);
-        if (savedName) {
-            document.getElementById('session-id').value = savedName;
-        }
+    // ─── STATE ───────────────────────────────────────────────────────────────
+    const urlParams  = new URLSearchParams(window.location.search);
+    const eventKey   = urlParams.get('event') || 'Default';
+    let   selectedFiles  = [];
+    let   myPhoneNumber  = '';   // filled from spreadsheet col H
+    let   uploadedCount  = 0;
+    let   totalToUpload  = 0;
 
-        // ✅ Save name to local storage whenever user types
-        document.getElementById('session-id').addEventListener('input', function() {
-            localStorage.setItem('sessionId_' + eventKey, this.value.trim());
-        });
+    // Unique session ID per page load (timestamp + random)
+    const sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-        function getTextColor(hex) {
-            hex = hex.replace('#', '');
-            var r = parseInt(hex.substring(0,2), 16);
-            var g = parseInt(hex.substring(2,4), 16);
-            var b = parseInt(hex.substring(4,6), 16);
-            var brightness = (r * 299 + g * 587 + b * 114) / 1000;
-            return brightness > 128 ? '#1a1a1a' : '#ffffff';
-        }
+    // ─── HELPERS ─────────────────────────────────────────────────────────────
+    function getTextColor(hex) {
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+        return ((r*299 + g*587 + b*114)/1000) > 128 ? '#1a1a1a' : '#ffffff';
+    }
+    function getLightTint(hex) {
+        hex = hex.replace('#', '');
+        const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+        return `rgb(${Math.round(r+(255-r)*0.85)},${Math.round(g+(255-g)*0.85)},${Math.round(b+(255-b)*0.85)})`;
+    }
+    function setStatus(msg, type) {
+        const s = document.getElementById('status');
+        s.textContent = msg;
+        s.className   = 'status visible ' + type;
+    }
+    function clearStatus() {
+        const s = document.getElementById('status');
+        s.className   = 'status';
+        s.textContent = '';
+    }
 
-        function getLightTint(hex) {
-            hex = hex.replace('#', '');
-            var r = parseInt(hex.substring(0,2), 16);
-            var g = parseInt(hex.substring(2,4), 16);
-            var b = parseInt(hex.substring(4,6), 16);
-            r = Math.round(r + (255 - r) * 0.85);
-            g = Math.round(g + (255 - g) * 0.85);
-            b = Math.round(b + (255 - b) * 0.85);
-            return 'rgb(' + r + ',' + g + ',' + b + ')';
-        }
+    // ─── APPLY THEME ─────────────────────────────────────────────────────────
+    fetch(SCRIPT_URL + '?event=' + encodeURIComponent(eventKey))
+        .then(r => r.json())
+        .then(theme => {
+            const bg   = theme.bgColor   || '#111111';
+            const btn  = theme.btnColor  || bg;
+            const txt  = theme.textColor || getTextColor(bg);
 
-        fetch(SCRIPT_URL + '?event=' + eventKey)
-            .then(function(res) { return res.json(); })
-            .then(function(theme) {
-                var bgColor   = theme.bgColor   || '#722F37';
-                var btnColor  = theme.btnColor  || '#ECEEBE';
-                var textColor = theme.textColor || '#A97B81';
+            document.body.style.backgroundColor                              = bg;
+            document.querySelector('.card').style.backgroundColor            = getLightTint(bg);
+            document.getElementById('event-name').style.color               = txt;
+            document.getElementById('event-tagline').style.color            = txt;
+            document.querySelector('.upload-zone').style.borderColor        = 'rgba(0,0,0,0.12)';
 
-                // Body background = bgColor directly from spreadsheet
-                document.getElementById('body-bg').style.backgroundColor = bgColor;
+            document.documentElement.style.setProperty('--btn', btn);
+            document.documentElement.style.setProperty('--btn-text', getTextColor(btn));
+            document.documentElement.style.setProperty('--text', txt);
 
-                // Card background = light tint of bgColor for subtle contrast
-                document.getElementById('event-card').style.backgroundColor = getLightTint(bgColor);
+            document.getElementById('event-name').textContent    = theme.name    || 'Photo Upload';
+            document.getElementById('event-tagline').textContent = theme.tagline || 'Select your photos to send';
+            document.title = theme.name || 'Photo Portal';
 
-                // Use textColor directly from spreadsheet — don't auto-calculate
-                document.getElementById('event-name').style.color = textColor;
-                document.getElementById('event-tagline').style.color = textColor;
-
-                // Button: use !important to beat any Tailwind classes
-                var btn = document.getElementById('upload-btn');
-                btn.style.setProperty('background-color', btnColor, 'important');
-                btn.style.setProperty('color', getTextColor(btnColor), 'important');
-
-                document.getElementById('event-name').innerText = theme.name;
-                document.title = theme.name;
-                document.getElementById('event-tagline').innerText = theme.tagline;
-
-                if (theme.logo) {
-                    var logo = document.getElementById('event-logo');
-                    logo.src = theme.logo;
-                    logo.classList.remove('hidden');
-                }
-            })
-            .catch(function(err) {
-                document.getElementById('event-name').innerText = 'Connection Error';
-                console.error(err);
-            });
-
-        document.getElementById('photo-input').addEventListener('change', function(e) {
-            var sessionId = document.getElementById('session-id').value.trim();
-            var status = document.getElementById('status');
-            var files = e.target.files;
-            if (!files.length) return;
-            if (!sessionId) {
-                status.className = "text-center text-sm font-bold p-3 rounded-xl bg-red-100 text-red-700 block";
-                status.innerText = '⚠️ Please enter your name or table number first.';
-                document.getElementById('photo-input').value = ''; // ✅ reset file input so change event fires again
-                return;
+            if (theme.logo) {
+                document.getElementById('event-logo').src = theme.logo;
+                document.getElementById('logo-wrap').classList.add('visible');
             }
 
-            status.className = "text-center text-sm font-bold p-3 rounded-xl bg-blue-100 text-blue-700 block";
-            status.innerText = 'Sending ' + files.length + ' photo(s)...';
-
-            for (var i = 0; i < files.length; i++) {
-                (function(file) {
-                    var reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = function() {
-                        fetch(SCRIPT_URL, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                eventName: eventKey,
-                                sessionId: sessionId,
-                                fileName: file.name,
-                                base64: reader.result
-                            })
-                        })
-                        .then(function() {
-                            status.innerText = '✅ PHOTOS SENT! Printing soon...';
-                            status.className = "text-center text-sm font-bold p-3 rounded-xl bg-green-100 text-green-700 block";
-                        })
-                        .catch(function() {
-                            status.innerText = '❌ ERROR. Try again.';
-                            status.className = "text-center text-sm font-bold p-3 rounded-xl bg-red-100 text-red-700 block";
-                        });
-                    };
-                })(files[i]);
-            }
+            // Phone number from col H (added in Apps Script)
+            if (theme.phone) myPhoneNumber = theme.phone.toString().replace(/\D/g,'');
+        })
+        .catch(() => {
+            document.getElementById('event-name').textContent    = 'Photo Upload';
+            document.getElementById('event-tagline').textContent = 'Select your photos to send';
         });
-    </script>
+
+    // ─── FILE SELECTION ───────────────────────────────────────────────────────
+    document.getElementById('photo-input').addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        // Merge with existing selection (dedupe by name+size)
+        files.forEach(f => {
+            const exists = selectedFiles.some(x => x.name === f.name && x.size === f.size);
+            if (!exists) selectedFiles.push(f);
+        });
+
+        renderPreviews();
+        clearStatus();
+
+        const sendBtn = document.getElementById('send-btn');
+        sendBtn.classList.add('visible');
+        document.getElementById('btn-label').textContent = `Send ${selectedFiles.length} Photo${selectedFiles.length > 1 ? 's' : ''}`;
+
+        // hide sms btn if re-selecting
+        document.getElementById('sms-btn').classList.remove('visible');
+    });
+
+    // drag-over visual
+    const zone = document.getElementById('upload-zone');
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragging'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
+    zone.addEventListener('drop',      e => {
+        e.preventDefault();
+        zone.classList.remove('dragging');
+        document.getElementById('photo-input').files = e.dataTransfer.files;
+        document.getElementById('photo-input').dispatchEvent(new Event('change'));
+    });
+
+    function renderPreviews() {
+        const strip = document.getElementById('preview-strip');
+        strip.innerHTML = '';
+        strip.classList.add('has-photos');
+        const MAX_SHOW = 5;
+        const show = selectedFiles.slice(0, MAX_SHOW);
+        show.forEach(file => {
+            const url   = URL.createObjectURL(file);
+            const thumb = document.createElement('img');
+            thumb.className = 'preview-thumb';
+            thumb.src = url;
+            thumb.onload = () => URL.revokeObjectURL(url);
+            strip.appendChild(thumb);
+        });
+        if (selectedFiles.length > MAX_SHOW) {
+            const extra = document.createElement('div');
+            extra.className = 'preview-count';
+            extra.textContent = `+${selectedFiles.length - MAX_SHOW}`;
+            strip.appendChild(extra);
+        }
+    }
+
+    // ─── UPLOAD + SMS ─────────────────────────────────────────────────────────
+    document.getElementById('send-btn').addEventListener('click', async function() {
+        if (!selectedFiles.length) return;
+
+        const sendBtn = this;
+        const spinner = document.getElementById('spinner');
+        const btnLbl  = document.getElementById('btn-label');
+
+        sendBtn.disabled = true;
+        spinner.classList.add('visible');
+        btnLbl.textContent = 'Uploading...';
+        setStatus(`Uploading ${selectedFiles.length} photo${selectedFiles.length > 1 ? 's' : ''}…`, 'sending');
+
+        uploadedCount = 0;
+        totalToUpload = selectedFiles.length;
+
+        const uploadFile = (file) => new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        eventName: eventKey,
+                        sessionId: sessionId,
+                        fileName:  file.name,
+                        base64:    reader.result
+                    })
+                })
+                .then(r => r.text())
+                .then(text => {
+                    uploadedCount++;
+                    const pct = Math.round((uploadedCount / totalToUpload) * 100);
+                    btnLbl.textContent = `Uploading… ${pct}%`;
+                    setStatus(`Uploaded ${uploadedCount} of ${totalToUpload}…`, 'sending');
+                    resolve({ ok: true, text });
+                })
+                .catch(() => { uploadedCount++; resolve({ ok: false }); });
+            };
+        });
+
+        // Upload all concurrently (cap at 3 parallel)
+        const results = await uploadInBatches(selectedFiles, 3, uploadFile);
+        const failed  = results.filter(r => !r.ok).length;
+
+        sendBtn.disabled = false;
+        spinner.classList.remove('visible');
+
+        if (failed === 0) {
+            btnLbl.textContent = '✓ Sent!';
+            setStatus(`✅ ${totalToUpload} photo${totalToUpload > 1 ? 's' : ''} uploaded successfully!`, 'success');
+            showSmsButton();
+        } else if (failed < totalToUpload) {
+            btnLbl.textContent = 'Partial';
+            setStatus(`⚠️ ${totalToUpload - failed} sent, ${failed} failed. Tap again to retry.`, 'error');
+            selectedFiles = []; // reset so only retries happen on re-select
+        } else {
+            btnLbl.textContent = 'Retry';
+            sendBtn.disabled   = false;
+            setStatus('❌ Upload failed. Check connection and try again.', 'error');
+        }
+    });
+
+    async function uploadInBatches(files, batchSize, uploadFn) {
+        const results = [];
+        for (let i = 0; i < files.length; i += batchSize) {
+            const batch = files.slice(i, i + batchSize);
+            const batchResults = await Promise.all(batch.map(uploadFn));
+            results.push(...batchResults);
+        }
+        return results;
+    }
+
+    function showSmsButton() {
+        const count = totalToUpload;
+        const body  = `📸 New ${count} photo${count > 1 ? 's' : ''} uploaded for event: ${eventKey} (session: ${sessionId}). Check your Drive folder!`;
+        const href  = myPhoneNumber
+            ? `sms:${myPhoneNumber}&body=${encodeURIComponent(body)}`
+            : `sms:&body=${encodeURIComponent(body)}`;
+
+        const smsBtn = document.getElementById('sms-btn');
+        smsBtn.href  = href;
+        smsBtn.classList.add('visible');
+    }
+</script>
 </body>
 </html>
