@@ -25,15 +25,16 @@
         }
 
         :root {
-            --bg: #111111;
-            --card: #1a1a1a;
-            --btn: #f5c518;
-            --btn-text: #111111;
-            --text: #ffffff;
-            --text-muted: rgba(255,255,255,0.55);
+            --bg:           #111111;
+            --card:         #2a2a2a;
+            --btn:          #f5c518;
+            --btn-text:     #111111;
+            --text:         #ffffff;
+            --subtext:      #999999;
+            --border:       #333333;
 
-            --radius: 20px;
-            --radius-lg: 32px;
+            --radius:       20px;
+            --radius-lg:    32px;
         }
 
         body {
@@ -89,7 +90,7 @@
 
             padding: 38px 28px;
 
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid var(--border);
 
             box-shadow: 0 40px 80px rgba(0,0,0,0.5);
 
@@ -127,7 +128,7 @@
 
             justify-content: center;
 
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 2px solid var(--border);
         }
 
         .logo-wrap.visible {
@@ -160,7 +161,7 @@
 
         .event-tagline {
 
-            color: var(--text-muted);
+            color: var(--subtext);
 
             text-align: center;
 
@@ -177,9 +178,9 @@
 
             border-radius: var(--radius);
 
-            border: 2px solid rgba(255,255,255,0.12);
+            border: 2px solid var(--border);
 
-            background: rgba(255,255,255,0.04);
+            background: var(--card);
 
             color: var(--text);
 
@@ -197,7 +198,7 @@
         }
 
         .input::placeholder {
-            color: rgba(255,255,255,0.4);
+            color: var(--subtext);
         }
 
         .picker-row {
@@ -217,11 +218,11 @@
 
             border-radius: var(--radius);
 
-            border: 2px dashed rgba(255,255,255,0.15);
+            border: 2px dashed var(--border);
 
             padding: 28px 12px 22px;
 
-            background: rgba(255,255,255,0.03);
+            background: var(--card);
 
             text-align: center;
 
@@ -307,7 +308,7 @@
 
             flex-shrink: 0;
 
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 2px solid var(--border);
         }
 
         .preview-count {
@@ -326,9 +327,9 @@
 
             justify-content: center;
 
-            background: rgba(255,255,255,0.05);
+            background: var(--card);
 
-            color: var(--text-muted);
+            color: var(--subtext);
 
             font-weight: 700;
         }
@@ -389,7 +390,7 @@
 
             border-radius: 50%;
 
-            border: 2px solid rgba(0,0,0,0.2);
+            border: 2px solid var(--card);
 
             border-top-color: var(--btn-text);
 
@@ -445,9 +446,9 @@
 
         .status.sending {
 
-            background: rgba(255,255,255,0.05);
+            background: var(--card);
 
-            color: var(--text-muted);
+            color: var(--subtext);
         }
 
     </style>
@@ -581,38 +582,6 @@
             'status visible ' + type;
     }
 
-    function getTextColor(hex) {
-
-        hex = hex.replace('#', '');
-
-        const r = parseInt(hex.substr(0,2),16);
-        const g = parseInt(hex.substr(2,2),16);
-        const b = parseInt(hex.substr(4,2),16);
-
-        return (
-            (r * 299 + g * 587 + b * 114) / 1000
-        ) > 128
-            ? '#111111'
-            : '#ffffff';
-    }
-
-    function getLightTint(hex) {
-
-        hex = hex.replace('#', '');
-
-        const r = parseInt(hex.substr(0,2),16);
-        const g = parseInt(hex.substr(2,2),16);
-        const b = parseInt(hex.substr(4,2),16);
-
-        return `
-            rgb(
-                ${Math.round(r + (255-r)*0.85)},
-                ${Math.round(g + (255-g)*0.85)},
-                ${Math.round(b + (255-b)*0.85)}
-            )
-        `;
-    }
-
     // ─────────────────────────────────────────
     // LOAD EVENT THEME
     // ─────────────────────────────────────────
@@ -634,6 +603,8 @@
                 throw new Error('Event not found');
             }
 
+            // TEXT CONTENT
+
             document.title =
                 theme.name || 'Photo Upload';
 
@@ -645,6 +616,8 @@
                 .textContent =
                 theme.tagline || 'Upload photos';
 
+            // LOGO
+
             if (theme.logo) {
 
                 document.getElementById('event-logo')
@@ -654,27 +627,27 @@
                     .classList.add('visible');
             }
 
-            const bg =
-                theme.bgColor || '#111111';
+            // THEME VARIABLES
 
-            const btn =
-                theme.btnColor || '#f5c518';
+            const bg       = theme.bgColor      || '#111111';
+            const card     = theme.cardColor    || '#2a2a2a';
+            const btn      = theme.btnColor     || '#f5c518';
+            const btnText  = theme.btnTextColor || '#111111';
+            const text     = theme.textColor    || '#ffffff';
+            const subtext  = theme.subtextColor || '#999999';
+            const border   = theme.borderColor  || '#333333';
 
-            document.body.style.background =
-                bg;
+            const root = document.documentElement;
 
-            document.querySelector('.card')
-                .style.background =
-                getLightTint(bg);
+            root.style.setProperty('--bg',       bg);
+            root.style.setProperty('--card',     card);
+            root.style.setProperty('--btn',      btn);
+            root.style.setProperty('--btn-text', btnText);
+            root.style.setProperty('--text',     text);
+            root.style.setProperty('--subtext',  subtext);
+            root.style.setProperty('--border',   border);
 
-            document.documentElement
-                .style.setProperty('--btn', btn);
-
-            document.documentElement
-                .style.setProperty(
-                    '--btn-text',
-                    getTextColor(btn)
-                );
+            document.body.style.background = bg;
 
         } catch (err) {
 
