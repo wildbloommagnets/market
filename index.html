@@ -29,8 +29,8 @@
             --card: #1a1a1a;
             --btn: #f5c518;
             --btn-text: #111111;
-            --text: #ffffff;
-            --text-muted: rgba(255,255,255,0.55);
+            --text: #333333;
+            --text-muted: rgba(51,51,51,0.55);
 
             --radius: 20px;
             --radius-lg: 32px;
@@ -66,7 +66,7 @@
             inset: 0;
 
             background-image:
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' [...]
 
             pointer-events: none;
 
@@ -660,7 +660,7 @@
             const btn =
                 theme.btnColor || '#f5c518';
 
-            const textColor = theme.textColor || '#ffffff';
+            const textColor = theme.textColor || '#333333';
 
             document.body.style.background =
                 bg;
@@ -677,8 +677,12 @@
                     '--btn-text',
                     getTextColor(btn)
                 );
-            document.documentElement.style.setProperty('--text', textColor);
-document.documentElement.style.setProperty('--text-muted', textColor + '99'); // ~60% opacity
+
+            document.documentElement
+                .style.setProperty('--text', textColor);
+
+            document.documentElement
+                .style.setProperty('--text-muted', textColor + '99');
 
         } catch (err) {
 
