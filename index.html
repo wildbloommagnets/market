@@ -660,6 +660,8 @@
             const btn =
                 theme.btnColor || '#f5c518';
 
+            const textColor = theme.textColor || '#ffffff';
+
             document.body.style.background =
                 bg;
 
@@ -675,6 +677,8 @@
                     '--btn-text',
                     getTextColor(btn)
                 );
+            document.documentElement.style.setProperty('--text', textColor);
+document.documentElement.style.setProperty('--text-muted', textColor + '99'); // ~60% opacity
 
         } catch (err) {
 
